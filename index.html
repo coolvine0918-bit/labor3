@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>노동 3권 마스터하기 학습지</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            /* 첨부해주신 이미지의 하늘색 배경 느낌 */
+            background-color: #CBE1EF; 
+            margin: 0;
+            padding: 0;
+            position: relative;
+            min-height: 100vh;
+        }
+        /* 첨부 이미지의 초록색 들판 느낌을 하단에 고정 */
+        .grass-bg {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 15vh;
+            background-color: #9FC167;
+            border-top: 8px solid #82A34C;
+            z-index: 0;
+        }
+        /* 이미지 중앙의 하얀 종이/울타리 느낌을 주는 컨테이너 */
+        .paper-container {
+            background-color: #FAFAFA;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
+            border: 2px dashed #d1d5db;
+        }
+        .correct-bg { background-color: #ecfdf5; border-color: #34d399; }
+        .wrong-bg { background-color: #fef2f2; border-color: #f87171; }
+        
+        /* 로딩 스피너 애니메이션 */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-left: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- 배경 데코레이션 (들판) -->
+    <div class="grass-bg"></div>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <div class="max-w-4xl mx-auto pt-10 px-4 pb-16 relative z-10">
+        <div class="paper-container p-6 md:p-10 mt-4">
+            
+            <div class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">🌱 노동 3권 마스터하기</h1>
+                <p class="text-gray-600">실생활 사례를 통해 배우는 근로자의 권리</p>
+            </div>
+
+            <!-- 학생 정보 입력 폼 -->
+            <div class="bg-blue-50 p-6 rounded-lg mb-8 border border-blue-100 flex flex-col md:flex-row gap-4 justify-center items-center">
+                <div class="flex items-center gap-2">
+                    <label for="studentId" class="font-bold text-gray-700">학번</label>
+                    <input type="text" id="studentId" placeholder="예: 10101" class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 w-32">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label for="studentName" class="font-bold text-gray-700">이름</label>
+                    <input type="text" id="studentName" placeholder="홍길동" class="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 w-32">
+                </div>
+            </div>
+
+            <!-- 문제 출력 영역 -->
+            <div id="quiz-container" class="space-y-8">
+                <!-- 자바스크립트를 통해 여기에 문제가 생성됩니다. -->
+            </div>
+
+            <!-- 제출 버튼 -->
+            <div class="mt-12 text-center">
+                <button id="submitBtn" onclick="submitQuiz()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-12 rounded-full shadow-lg transition duration-200 text-lg flex items-center justify-center mx-auto">
+                    <span>답안 제출하고 결과 보기</span>
+                    <div id="loading" class="loader"></div>
+                </button>
+                <p id="error-msg" class="text-red-500 mt-2 font-bold hidden">학번과 이름을 모두 입력하고, 모든 문제를 풀어주세요!</p>
+            </div>
+
+            <!-- 최종 결과 및 점수 표시 영역 -->
+            <div id="result-area" class="mt-10 p-8 bg-yellow-50 rounded-lg border-2 border-yellow-200 text-center hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">🎉 수고하셨습니다!</h2>
+                <p class="text-lg text-gray-700 mb-4">당신의 점수는...</p>
+                <div class="text-5xl font-extrabold text-blue-600 mb-4"><span id="final-score">0</span> / 15점</div>
+                <p class="text-gray-600">틀린 문제는 아래 해설을 통해 다시 한번 확인해보세요!</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 선생님이 제공해주신 15개 문제 데이터입니다.
+        const quizData = [
+            {
+                id: 1, title: "단결권의 기본 개념",
+                caseText: "A택배 회사에서 일하는 노동자들은 최근 늘어난 업무량에 비해 휴식 시간이 턱없이 부족하다고 느꼈다. 이에 노동자들은 스스로 모여 근로조건을 개선하기 위한 단체인 'A택배 노동조합'을 결성했다.",
+                question: "위 사례에서 노동자들이 행사한 헌법상의 권리는 무엇인가?",
+                options: ["평등권", "단결권", "단체교섭권", "단체행동권"],
+                answer: 1, // 0부터 시작하는 인덱스 (1 = 단결권)
+                explanation: "근로조건을 유지하고 개선하기 위해 노동자들이 스스로 노동조합을 결성하거나 가입할 수 있는 권리를 단결권이라고 합니다."
+            },
+            {
+                id: 2, title: "단체교섭권 침해",
+                caseText: "B회사 노동조합 대표는 직원들의 임금 인상과 안전한 작업 환경 마련을 논의하기 위해 사장님에게 대화를 요청했다. 하지만 사장님은 \"바쁘다\"는 핑계로 3개월째 만남을 피하고 있다.",
+                question: "사장님의 행동은 노동 3권 중 어떤 권리를 침해한 것인가?",
+                options: ["단결권", "단체교섭권", "단체행동권", "참정권"],
+                answer: 1,
+                explanation: "노동조합이 사용자와 근로조건에 관해 협상할 수 있는 권리인 단체교섭권을 사용자가 정당한 이유 없이 거부하거나 회피하는 것은 부당노동행위에 해당합니다."
+            },
+            {
+                id: 3, title: "단체행동권의 행사",
+                caseText: "C공장의 노동조합은 회사 측과 야간 근로 수당 인상에 대해 협상했으나 결국 의견 차이를 좁히지 못하고 결렬되었다. 이에 노동조합은 합법적인 절차를 거쳐 일제히 작업을 멈추는 파업에 돌입했다.",
+                question: "위 사례에서 노동자들이 자신들의 주장을 관철하기 위해 행사한 권리는 무엇인가?",
+                options: ["단결권", "단체교섭권", "단체행동권", "재산권"],
+                answer: 2,
+                explanation: "원만한 단체교섭이 이루어지지 않을 때, 노동자들이 요구를 관철하기 위해 파업, 태업 등의 방법으로 업무의 정상적인 운영을 저해하는 권리가 단체행동권입니다."
+            },
+            {
+                id: 4, title: "황견계약 (단결권 침해)",
+                caseText: "D회사 사장님은 신입사원을 채용하면서 근로계약서에 \"우리 회사에 다니는 동안에는 절대 노동조합에 가입하지 않겠으며, 가입 시 해고되어도 이의를 제기하지 않는다\"라는 조항을 넣고 서명을 강요했다.",
+                question: "이 계약 조건이 제한하고 있는 노동자의 권리는 무엇인가?",
+                options: ["단결권", "단체교섭권", "단체행동권", "직업 선택의 자유"],
+                answer: 0,
+                explanation: "근로자가 노동조합에 가입하지 않을 것 등을 고용 조건으로 하는 이른바 '황견계약(Yellow-dog contract)'은 노동자의 단결권을 짓밟는 대표적인 부당노동행위입니다."
+            },
+            {
+                id: 5, title: "공무원의 노동 3권 제한",
+                caseText: "E경찰서 소속 경찰관들은 최근 급증한 치안 업무로 인한 피로를 호소하며 위험수당 인상을 요구했다. 요구가 받아들여지지 않자 이들은 파업을 결의하고 내일부터 출근하지 않기로 했다.",
+                question: "위 사례의 파업에 대한 설명으로 가장 적절한 것은?",
+                options: ["경찰관도 노동자이므로 합법적인 파업이다.", "국민의 생명과 안전에 직결되므로 법적으로 단체행동권이 제한된다.", "경찰서장의 허락을 받으면 파업이 가능하다.", "경찰관은 단결권조차 전혀 가질 수 없다."],
+                answer: 1,
+                explanation: "공무원은 법률이 정하는 자에 한하여 노동 3권이 보장되며, 특히 경찰, 소방관 등은 국민의 생명과 직결되는 업무를 하므로 노동 3권이 엄격히 제한됩니다."
+            },
+            {
+                id: 6, title: "단체교섭의 주체",
+                caseText: "F마트에서 일하는 직원 '갑'은 개인적으로 점장실을 찾아가 \"요즘 물가도 많이 올랐으니 제 시급을 올려주세요\"라고 요구했다.",
+                question: "'갑'의 행동을 헌법상 보장된 '단체교섭권'의 행사로 볼 수 없는 이유는 무엇인가?",
+                options: ["임금 인상은 단체교섭의 대상이 아니기 때문에", "단체교섭권은 개인이 아닌 '노동조합'을 통해 행사하는 권리이기 때문에", "점장은 사용자가 아니기 때문에", "서면이 아닌 말로 요구했기 때문에"],
+                answer: 1,
+                explanation: "단체교섭권은 개별 노동자가 아닌, 노동자가 단결하여 만든 '노동조합'이 사용자와 교섭하는 권리입니다."
+            },
+            {
+                id: 7, title: "단체협약의 체결",
+                caseText: "G회사 노동조합은 사장님과 한 달간의 긴 릴레이 회의 끝에 '근로시간 단축 및 휴가 일수 확대'를 내용으로 하는 문서에 합의하고 서로 서명했다.",
+                question: "위 사례는 노동 3권 중 어떤 권리가 성공적으로 행사된 결과인가?",
+                options: ["단결권", "단체교섭권", "단체행동권", "행복추구권"],
+                answer: 1,
+                explanation: "단체교섭을 통해 근로조건에 관해 노사 간에 합의가 이루어져 문서로 작성된 것을 '단체협약'이라 하며, 이는 단체교섭권 행사의 결과물입니다."
+            },
+            {
+                id: 8, title: "노조 가입 방해와 차별 (단결권 침해)",
+                caseText: "H회사 사장님은 \"이번 달에 노동조합을 탈퇴하는 직원에게만 특별 보너스 100만 원을 지급하고, 계속 노조에 남는 직원은 승진에서 누락시키겠다\"고 사내 게시판에 공지했다.",
+                question: "사장님의 조치로 인해 가장 심각하게 훼손되는 권리는 무엇인가?",
+                options: ["단결권", "단체교섭권", "단체행동권", "언론의 자유"],
+                answer: 0,
+                explanation: "노동조합에 가입하거나 활동한다는 이유로 불이익을 주거나, 탈퇴를 조건으로 이익을 주는 행위는 노동자의 단결권을 침해하는 부당노동행위입니다."
+            },
+            {
+                id: 9, title: "태업(Slowdown)의 이해",
+                caseText: "I자동차 공장의 노동자들은 임금 협상이 실패하자, 정상적으로 출근은 하되 의도적으로 작업 속도를 평소의 절반으로 늦추어 하루 생산량을 크게 떨어뜨렸다.",
+                question: "노동자들이 취한 이러한 행동(태업)은 노동 3권 중 어디에 속하는가?",
+                options: ["단결권", "단체교섭권", "단체행동권", "단체협약권"],
+                answer: 2,
+                explanation: "파업뿐만 아니라 태업(작업 능률을 의도적으로 저하시키는 행위) 역시 쟁의 행위의 일종으로 단체행동권에 포함됩니다."
+            },
+            {
+                id: 10, title: "방위산업체 노동자의 권리 제한",
+                caseText: "국가를 방위하는 미사일을 생산하는 J공장(주요 방위산업체)의 노동자들은 회사의 일방적인 임금 삭감에 반발하여 전면 파업에 돌입하려 한다.",
+                question: "위 파업에 대한 헌법과 법률의 입장으로 가장 적절한 것은?",
+                options: ["국가 안보와 직결되므로 법률에 의해 단체행동권이 제한되거나 인정되지 않을 수 있다.", "어떤 상황에서도 노동 3권은 절대적으로 보장되므로 정당하다.", "무기 생산 공장이므로 단결권 자체가 금지된다.", "사장님과 합의만 하면 언제든 파업이 가능하다."],
+                answer: 0,
+                explanation: "헌법 제33조 3항에 따라 법률이 정하는 주요 방위산업체에 종사하는 근로자의 단체행동권은 제한되거나 인정되지 않을 수 있습니다."
+            },
+            {
+                id: 11, title: "노동 3권의 순차적 관계",
+                caseText: "N회사 직원들은 휴게실 설치를 요구하며 모임을 만들고(㉠), 사장님과 마주 앉아 요구사항을 전달했으나 거절당하자(㉡), 공장 앞에서 피켓을 들고 일손을 놓았다(㉢).",
+                question: "㉠, ㉡, ㉢에 해당하는 노동 3권을 순서대로 바르게 나열한 것은?",
+                options: ["단결권 - 단체교섭권 - 단체행동권", "단결권 - 단체행동권 - 단체교섭권", "단체교섭권 - 단결권 - 단체행동권", "단체행동권 - 단체교섭권 - 단결권"],
+                answer: 0,
+                explanation: "노조를 결성하는 것(단결권) -> 협상하는 것(단체교섭권) -> 결렬 시 파업하는 것(단체행동권) 순으로 권리가 행사됩니다."
+            },
+            {
+                id: 12, title: "가입 및 활동의 자유 보장",
+                caseText: "L회사에 막 입사한 신입사원이 선배들에게 \"저도 노동조합에 가입해서 근로조건을 개선하는 데 힘을 보태고 싶습니다\"라며 자발적으로 가입 원서를 냈다.",
+                question: "이 신입사원이 행사하고 있는 권리는 무엇인가?",
+                options: ["단결권", "단체교섭권", "단체행동권", "청원권"],
+                answer: 0,
+                explanation: "단결권은 노조를 새로 조직하는 것뿐만 아니라, 이미 조직된 노조에 자발적으로 가입하고 활동할 수 있는 권리를 모두 포함합니다."
+            },
+            {
+                id: 13, title: "정당한 단체행동에 대한 면책",
+                caseText: "M회사 노동조합이 법이 정한 찬반 투표 등 적법한 절차를 거쳐 파업을 진행했다. 그러자 회사는 파업에 참여한 노동자들에게 \"공장이 멈춰서 발생한 손해를 모두 배상하라\"며 협박했다.",
+                question: "위 사례에서 노동자들을 보호하기 위한 법적 원칙으로 가장 알맞은 것은?",
+                options: ["정당한 단체행동권 행사에 대해서는 민·형사상 책임을 면제한다.", "파업으로 인한 손해는 무조건 노동자가 절반을 부담한다.", "노동조합의 간부만 손해배상 책임을 진다.", "사용자의 손해배상 청구는 노동위원회의 허락을 받아야 한다."],
+                answer: 0,
+                explanation: "목적과 절차가 정당한 쟁의 행위(단체행동)로 인해 회사에 손해가 발생하더라도, 노동자에게 업무방해죄를 묻거나 손해배상을 청구할 수 없도록 법으로 보호하고 있습니다."
+            },
+            {
+                id: 14, title: "부당노동행위 구제 기관",
+                caseText: "P회사 직원인 민수는 노동조합 위원장으로 선출되었다는 이유만으로 회사로부터 부당하게 해고를 당했다.",
+                question: "민수가 부당노동행위에 대해 가장 먼저 구제를 신청하여 도움을 받을 수 있는 국가 기관은 어디인가?",
+                options: ["헌법재판소", "대법원", "노동위원회", "경찰서"],
+                answer: 2,
+                explanation: "사용자의 부당노동행위로 인해 권리를 침해당한 노동자는 법원에 소송을 제기하기 전, 신속하고 전문적인 구제를 위해 '노동위원회(지방노동위원회)'에 구제를 신청할 수 있습니다."
+            },
+            {
+                id: 15, title: "노동 3권의 궁극적 목적",
+                caseText: "현대 국가의 헌법은 사용자에 비해 약자의 위치에 있는 노동자들에게 단결권, 단체교섭권, 단체행동권이라는 무기를 쥐여주었다.",
+                question: "노동자들이 이 세 가지 권리를 통해 궁극적으로 달성하고자 하는 헌법상의 기본권은 무엇인가?",
+                options: ["자유권 (국가로부터 간섭받지 않을 권리)", "사회권 (인간다운 생활을 할 권리)", "참정권 (정치에 참여할 권리)", "청구권 (국가에 일정한 행위를 요구할 권리)"],
+                answer: 1,
+                explanation: "노동 3권은 노동자가 사용자와 대등한 위치에서 근로조건을 개선하여 최소한의 '인간다운 생활'을 보장받기 위한 권리이므로, 사회권적 기본권에 해당합니다."
+            }
+        ];
+
+        // 페이지가 로드될 때 문제를 HTML에 뿌려주는 함수
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            
+            quizData.forEach((quiz, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.id = `q-block-${index}`;
+                questionDiv.className = 'p-6 bg-white rounded-lg border border-gray-200 transition-colors duration-300';
+                
+                // 선택지 생성 로직
+                let optionsHtml = '';
+                quiz.options.forEach((opt, optIndex) => {
+                    optionsHtml += `
+                        <label class="flex items-start gap-3 p-3 rounded hover:bg-blue-50 cursor-pointer border border-transparent hover:border-blue-100 transition">
+                            <input type="radio" name="q${index}" value="${optIndex}" class="mt-1 w-4 h-4 text-blue-600">
+                            <span class="text-gray-700">${optIndex + 1}. ${opt}</span>
+                        </label>
+                    `;
+                });
+
+                questionDiv.innerHTML = `
+                    <div class="mb-2 inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">문제 ${index + 1}</div>
+                    <div class="bg-gray-50 p-4 rounded text-gray-700 text-sm mb-4 border-l-4 border-blue-400">
+                        <strong>[사례]</strong> ${quiz.caseText}
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Q. ${quiz.question}</h3>
+                    <div class="space-y-2">
+                        ${optionsHtml}
+                    </div>
+                    <!-- 채점 후 보여질 피드백 영역 (초기엔 숨김) -->
+                    <div id="feedback-${index}" class="mt-4 p-4 rounded hidden">
+                        <p id="result-text-${index}" class="font-bold mb-1"></p>
+                        <p class="text-sm text-gray-600"><strong>해설:</strong> ${quiz.explanation}</p>
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+            });
+        }
+
+        // 페이지 로드 시 실행
+        window.onload = renderQuiz;
+
+        // ⭐ 여기에 1단계에서 복사한 구글 앱스 스크립트 웹 앱 URL을 붙여넣으세요! ⭐
+        const GAS_URL = "YOUR_WEB_APP_URL_HERE"; 
+
+        async function submitQuiz() {
+            const studentId = document.getElementById('studentId').value.trim();
+            const studentName = document.getElementById('studentName').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            
+            // 1. 유효성 검사 (학번, 이름, 모든 문제 풀었는지)
+            if (!studentId || !studentName) {
+                errorMsg.innerText = "학번과 이름을 모두 입력해주세요.";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            let allAnswered = true;
+            let score = 0;
+            const userAnswers = [];
+
+            for (let i = 0; i < quizData.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if (!selected) {
+                    allAnswered = false;
+                    break;
+                }
+                userAnswers.push(parseInt(selected.value));
+            }
+
+            if (!allAnswered) {
+                errorMsg.innerText = "풀지 않은 문제가 있습니다. 모든 문제에 답해주세요!";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+            
+            // UI 변경: 버튼 로딩 상태, 입력 비활성화
+            document.getElementById('loading').style.display = 'inline-block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('studentId').disabled = true;
+            document.getElementById('studentName').disabled = true;
+
+            // 2. 채점 및 피드백 노출
+            for (let i = 0; i < quizData.length; i++) {
+                const qBlock = document.getElementById(`q-block-${i}`);
+                const feedbackDiv = document.getElementById(`feedback-${i}`);
+                const resultText = document.getElementById(`result-text-${i}`);
+                
+                // 라디오 버튼 비활성화
+                const radios = document.querySelectorAll(`input[name="q${i}"]`);
+                radios.forEach(radio => radio.disabled = true);
+
+                if (userAnswers[i] === quizData[i].answer) {
+                    // 정답
+                    score++;
+                    qBlock.classList.add('correct-bg');
+                    feedbackDiv.classList.add('bg-green-100');
+                    resultText.className = "font-bold mb-1 text-green-700";
+                    resultText.innerText = "⭕ 정답입니다!";
+                } else {
+                    // 오답
+                    qBlock.classList.add('wrong-bg');
+                    feedbackDiv.classList.add('bg-red-100');
+                    resultText.className = "font-bold mb-1 text-red-700";
+                    resultText.innerText = `❌ 오답입니다. (정답: ${quizData[i].answer + 1}번)`;
+                }
+                feedbackDiv.classList.remove('hidden');
+            }
+
+            // 결과 화면 표시
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('result-area').classList.remove('hidden');
+            document.getElementById('submitBtn').style.display = 'none';
+
+            // 3. 구글 시트로 데이터 전송 (백엔드 통신)
+            if (GAS_URL === "https://script.google.com/macros/s/AKfycbyJb3QzhEZHXZA0qXszFr4VpdylWt4jmwBLeaAnXe2JAX1DnNHYqZRUEfFpNvNgdnuK/exec") {
+                // 선생님을 위한 안내창
+                alert("[개발자 모드 안내] 현재 웹 앱 URL이 입력되지 않아 구글 시트로 점수가 전송되지 않았습니다. 채점 기능은 정상 작동합니다.");
+                return;
+            }
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORS 우회를 위해 text/plain 사용
+                    body: JSON.stringify({
+                        studentId: studentId,
+                        studentName: studentName,
+                        score: score
+                    })
+                });
+                const result = await response.json();
+                if(result.result !== 'success') {
+                    console.error("전송 실패:", result);
+                }
+            } catch (error) {
+                console.error("구글 시트 전송 중 오류 발생:", error);
+            }
+        }
+    </script>
+</body>
+</html>
